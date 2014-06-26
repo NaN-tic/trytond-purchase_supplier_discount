@@ -1,0 +1,15 @@
+# 
+msgid ""
+msgstr "Content-Type: text/plain; charset=utf-8\n"
+
+msgctxt "field:purchase.product_supplier.price,discount:"
+msgid "Discount"
+msgstr "Descuento"
+
+msgctxt "field:purchase.product_supplier.price,gross_unit_price:"
+msgid "Gross Price"
+msgstr "Precio bruto"
+
+msgctxt "view:purchase.product_supplier.price:"
+msgid "%"
+msgstr "%"
