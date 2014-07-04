@@ -16,7 +16,7 @@ class TestCase(unittest.TestCase):
 
     def setUp(self):
         trytond.tests.test_tryton.install_module(
-            'product_supplier_discount')
+            'purchase_supplier_discount')
         self.uom = POOL.get('product.uom')
         self.uom_category = POOL.get('product.uom.category')
         self.category = POOL.get('product.category')
@@ -31,7 +31,7 @@ class TestCase(unittest.TestCase):
 
     def test0005views(self):
         'Test views'
-        test_view('product_supplier_discount')
+        test_view('purchase_supplier_discount')
 
     def test0006depends(self):
         'Test depends'
