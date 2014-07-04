@@ -35,7 +35,7 @@ class ProductSupplierPrice:
 
     @fields.depends('gross_unit_price', 'discount')
     def update_prices(self):
-        unit_price = None
+        unit_price = self.gross_unit_price
         gross_unit_price = self.gross_unit_price
         if self.gross_unit_price is not None and self.discount is not None:
             unit_price = self.gross_unit_price * (1 - self.discount)
