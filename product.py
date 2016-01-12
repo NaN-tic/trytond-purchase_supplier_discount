@@ -2,11 +2,11 @@
 # copyright notices and license terms.
 from decimal import Decimal
 
+from trytond.config import config
 from trytond.model import fields
 from trytond.pool import PoolMeta
-from trytond.config import config
-DIGITS = int(config.get('digits', 'unit_price_digits', 4))
-DISCOUNT_DIGITS = int(config.get('digits', 'discount_digits', 4))
+from trytond.modules.product import price_digits
+DISCOUNT_DIGITS = int(config.get('digits', 'discount_digits', default=4))
 
 __all__ = ['ProductSupplierPrice']
 __metaclass__ = PoolMeta
@@ -15,7 +15,7 @@ __metaclass__ = PoolMeta
 class ProductSupplierPrice:
     __name__ = 'purchase.product_supplier.price'
 
-    gross_unit_price = fields.Numeric('Gross Price', digits=(16, DIGITS),
+    gross_unit_price = fields.Numeric('Gross Price', digits=price_digits,
         required=True)
     discount = fields.Numeric('Discount', digits=(16, DISCOUNT_DIGITS))
 
@@ -23,7 +23,7 @@ class ProductSupplierPrice:
     def __setup__(cls):
         super(ProductSupplierPrice, cls).__setup__()
         cls.unit_price.states['readonly'] = True
-        cls.unit_price.digits = (20, DIGITS + DISCOUNT_DIGITS)
+        cls.unit_price.digits = (20, price_digits[1] + DISCOUNT_DIGITS)
 
     @fields.depends('gross_unit_price', 'discount')
     def on_change_gross_unit_price(self):
