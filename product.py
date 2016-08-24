@@ -9,12 +9,11 @@ from trytond.modules.product import price_digits
 DISCOUNT_DIGITS = int(config.get('digits', 'discount_digits', default=4))
 
 __all__ = ['ProductSupplierPrice']
-__metaclass__ = PoolMeta
 
 
 class ProductSupplierPrice:
     __name__ = 'purchase.product_supplier.price'
-
+    __metaclass__ = PoolMeta
     gross_unit_price = fields.Numeric('Gross Price', digits=price_digits,
         required=True)
     discount = fields.Numeric('Discount', digits=(16, DISCOUNT_DIGITS))
