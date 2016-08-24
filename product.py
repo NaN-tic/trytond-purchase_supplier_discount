@@ -49,10 +49,6 @@ class ProductSupplierPrice:
                 Decimal(str(10.0 ** -digits)))
         self.gross_unit_price = gross_unit_price
         self.unit_price = unit_price
-        return {
-            'gross_unit_price': gross_unit_price,
-            'unit_price': unit_price,
-            }
 
     @classmethod
     def create(cls, vlist):
