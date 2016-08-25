@@ -67,7 +67,8 @@ class ProductSupplierPrice:
                     supplier_price = cls()
                     supplier_price.gross_unit_price = unit_price
                     supplier_price.discount = vals['discount']
-                    unit_price = supplier_price.update_prices()['unit_price']
+                    supplier_price.update_prices()
+                    unit_price = supplier_price.unit_price
                 vals['unit_price'] = unit_price
             if 'discount' not in vals:
                 vals['discount'] = Decimal(0)
