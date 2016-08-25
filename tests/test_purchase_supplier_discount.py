@@ -1,103 +1,77 @@
-#!/usr/bin/env python
 # The COPYRIGHT file at the top level of this repository contains the full
 # copyright notices and license terms.
-import doctest
 import unittest
+import datetime
 from decimal import Decimal
 
 import trytond.tests.test_tryton
-from trytond.tests.test_tryton import POOL, DB_NAME, USER, CONTEXT, test_view,\
-    test_depends
-from trytond.transaction import Transaction
+from trytond.tests.test_tryton import ModuleTestCase, with_transaction
+from trytond.pool import Pool
+from trytond.modules.company.tests import create_company, set_company
+from trytond.modules.account.tests import create_chart
 
 
-class TestCase(unittest.TestCase):
-    'Test module'
+def create_supplier(company):
+    pool = Pool()
+    Account = pool.get('account.account')
+    Template = pool.get('product.template')
+    Uom = pool.get('product.uom')
+    ProductSupplier = pool.get('purchase.product_supplier')
+    Party = pool.get('party.party')
 
-    def setUp(self):
-        trytond.tests.test_tryton.install_module(
-            'purchase_supplier_discount')
-        self.uom = POOL.get('product.uom')
-        self.uom_category = POOL.get('product.uom.category')
-        self.category = POOL.get('product.category')
-        self.template = POOL.get('product.template')
-        self.product = POOL.get('product.product')
-        self.company = POOL.get('company.company')
-        self.party = POOL.get('party.party')
-        self.account = POOL.get('account.account')
-        self.product_supplier = POOL.get('purchase.product_supplier')
-        self.supplier_price = POOL.get('purchase.product_supplier.price')
-        self.user = POOL.get('res.user')
+    u, = Uom.search([('name', '=', 'Unit')])
+    template, = Template.create([{
+                'name': 'Product',
+                'default_uom': u.id,
+                'purchase_uom': u.id,
+                'list_price': Decimal(0),
+                'cost_price': Decimal(10),
+                'products': [('create', [{}])],
+                }])
+    product, = template.products
 
-    def test0005views(self):
-        'Test views'
-        test_view('purchase_supplier_discount')
+    # Prepare supplier
+    receivable, = Account.search([
+        ('kind', '=', 'receivable'),
+        ('company', '=', company.id),
+        ])
+    payable, = Account.search([
+        ('kind', '=', 'payable'),
+        ('company', '=', company.id),
+        ])
+    supplier, = Party.create([{
+                'name': 'supplier',
+                'account_receivable': receivable.id,
+                'account_payable': payable.id,
+                }])
 
-    def test0006depends(self):
-        'Test depends'
-        test_depends()
-
-    def test0010update_prices(self):
-        '''
-        Test price computation in create() and update_prices() Product methods
-        '''
-        with Transaction().start(DB_NAME, USER, context=CONTEXT):
-            company, = self.company.search([
-                    ('rec_name', '=', 'Dunder Mifflin'),
-                    ])
-            self.user.write([self.user(USER)], {
-                'main_company': company.id,
+    # Prepare product supplier
+    product_supplier, = ProductSupplier.create([{
+                'product': template.id,
                 'company': company.id,
-                })
+                'party': supplier.id,
+                'lead_time': datetime.timedelta(days=2),
+                }])
+    return supplier, product_supplier
 
-            # Prepare product
-            uom_category, = self.uom_category.create([{'name': 'Test'}])
-            uom, = self.uom.create([{
-                        'name': 'Test',
-                        'symbol': 'T',
-                        'category': uom_category.id,
-                        'rate': 1.0,
-                        'factor': 1.0,
-                        }])
-            category, = self.category.create([{'name': 'ProdCategoryTest'}])
-            template, = self.template.create([{
-                        'name': 'ProductTest',
-                        'default_uom': uom.id,
-                        'category': category.id,
-                        'account_category': True,
-                        'list_price': Decimal(0),
-                        'cost_price': Decimal(10),
-                        }])
-            self.product.create([{
-                        'template': template.id,
-                        }])
 
-            # Prepare supplier
-            receivable, = self.account.search([
-                ('kind', '=', 'receivable'),
-                ('company', '=', company.id),
-                ])
-            payable, = self.account.search([
-                ('kind', '=', 'payable'),
-                ('company', '=', company.id),
-                ])
-            supplier, = self.party.create([{
-                        'name': 'supplier',
-                        'account_receivable': receivable.id,
-                        'account_payable': payable.id,
-                        }])
+class PurchaseSupplierDiscountTestCase(ModuleTestCase):
+    'Test Purchase Supplier Discount module'
+    module = 'purchase_supplier_discount'
 
-            # Prepare product supplier
-            product_supplier, = self.product_supplier.create([{
-                        'product': template.id,
-                        'company': company.id,
-                        'party': supplier.id,
-                        'delivery_time': 2,
-                        }])
+    @with_transaction()
+    def test_update_price(self):
+        'Test update price'
+        ProductSupplierPrice = Pool().get('purchase.product_supplier.price')
+
+        company = create_company()
+        with set_company(company):
+            create_chart(company)
+            supplier, product_supplier = create_supplier(company)
 
             # Create supplier price defining unit price and not gross unit
             # price (support of modules doesn't depend of this)
-            supplier_price, = self.supplier_price.create([{
+            supplier_price, = ProductSupplierPrice.create([{
                         'product_supplier': product_supplier.id,
                         'quantity': 0,
                         'unit_price': Decimal(16),
@@ -106,7 +80,7 @@ class TestCase(unittest.TestCase):
             self.assertEqual(supplier_price.gross_unit_price, Decimal(20))
 
             # Create supplier price defining gros_unit price
-            supplier_price, = self.supplier_price.create([{
+            supplier_price, = ProductSupplierPrice.create([{
                         'product_supplier': product_supplier.id,
                         'quantity': 0,
                         'gross_unit_price': Decimal(16),
@@ -128,16 +102,65 @@ class TestCase(unittest.TestCase):
             supplier_price.update_prices()
             self.assertEqual(supplier_price.unit_price, Decimal(30))
 
+    @with_transaction()
+    def test_purchase_price(self):
+        'Test update price'
+        pool = Pool()
+        ProductSupplierPrice = pool.get('purchase.product_supplier.price')
+        Purchase = pool.get('purchase.purchase')
+        PurchaseLine = pool.get('purchase.line')
+
+        company = create_company()
+        with set_company(company):
+            create_chart(company)
+            supplier, product_supplier = create_supplier(company)
+
+            ProductSupplierPrice.create([{
+                'product_supplier': product_supplier.id,
+                'quantity': 0,
+                'unit_price': Decimal(16),
+                }, {
+                'product_supplier': product_supplier.id,
+                'quantity': 5,
+                'unit_price': Decimal(14),
+                'discount': Decimal('0.10'),
+                }, {
+                'product_supplier': product_supplier.id,
+                'quantity': 10,
+                'unit_price': Decimal(12),
+                'discount': Decimal('0.20'),
+                }])
+
+            purchase = Purchase()
+            purchase.party = supplier
+            purchase.currency = company.currency
+
+            line1 = PurchaseLine()
+            line1.purchase = purchase
+            line1.product = product_supplier.id
+            line1.quantity = 1
+            line1.on_change_product()
+            self.assertEqual(line1.unit_price, Decimal(16))
+            self.assertEqual(line1.discount, 0)
+
+            line2 = PurchaseLine()
+            line2.purchase = purchase
+            line2.product = product_supplier.id
+            line2.quantity = 6
+            line2.on_change_product()
+            self.assertEqual(line2.unit_price, Decimal(14))
+            self.assertEqual(line2.discount, Decimal('0.10'))
+
+            line3 = PurchaseLine()
+            line3.purchase = purchase
+            line3.product = product_supplier.id
+            line3.quantity = 20
+            line3.on_change_product()
+            self.assertEqual(line3.unit_price, Decimal(12))
+            self.assertEqual(line3.discount, Decimal('0.20'))
 
 def suite():
     suite = trytond.tests.test_tryton.suite()
-    from trytond.modules.company.tests import test_company
-    for test in test_company.suite():
-        if test not in suite:
-            suite.addTest(test)
-    from trytond.modules.account.tests import test_account
-    for test in test_account.suite():
-        if test not in suite and not isinstance(test, doctest.DocTestCase):
-            suite.addTest(test)
-    suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestCase))
+    suite.addTests(unittest.TestLoader().loadTestsFromTestCase(
+        PurchaseSupplierDiscountTestCase))
     return suite
