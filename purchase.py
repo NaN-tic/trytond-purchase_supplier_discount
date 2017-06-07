@@ -39,6 +39,8 @@ class PurchaseLine:
                             discount = price.discount or Decimal(0)
                             gross_unit_price_wo_round = price.gross_unit_price
                             unit_price = price.unit_price
+                            break
+                    break
 
         digits = self.__class__.unit_price.digits[1]
         unit_price = unit_price.quantize(Decimal(str(10.0 ** -digits)))
