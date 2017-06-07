@@ -32,27 +32,36 @@ def create_supplier(company):
 
     # Prepare supplier
     receivable, = Account.search([
-        ('kind', '=', 'receivable'),
-        ('company', '=', company.id),
-        ])
+                ('kind', '=', 'receivable'),
+                ('company', '=', company.id),
+                ])
     payable, = Account.search([
-        ('kind', '=', 'payable'),
-        ('company', '=', company.id),
-        ])
-    supplier, = Party.create([{
-                'name': 'supplier',
+                ('kind', '=', 'payable'),
+                ('company', '=', company.id),
+                ])
+    supplier1, supplier2, = Party.create([{
+                'name': 'Supplier 1',
+                'account_receivable': receivable.id,
+                'account_payable': payable.id,
+                }, {
+                'name': 'Supplier 2',
                 'account_receivable': receivable.id,
                 'account_payable': payable.id,
                 }])
 
     # Prepare product supplier
-    product_supplier, = ProductSupplier.create([{
+    product_supplier1, product_supplier2 = ProductSupplier.create([{
                 'product': template.id,
                 'company': company.id,
-                'party': supplier.id,
+                'party': supplier1.id,
+                'lead_time': datetime.timedelta(days=2),
+                }, {
+                'product': template.id,
+                'company': company.id,
+                'party': supplier2.id,
                 'lead_time': datetime.timedelta(days=2),
                 }])
-    return supplier, product_supplier
+    return supplier1, supplier2, product, product_supplier1, product_supplier2
 
 
 class PurchaseSupplierDiscountTestCase(ModuleTestCase):
@@ -67,12 +76,12 @@ class PurchaseSupplierDiscountTestCase(ModuleTestCase):
         company = create_company()
         with set_company(company):
             create_chart(company)
-            supplier, product_supplier = create_supplier(company)
+            _, _, _, product_supplier1, _ = create_supplier(company)
 
             # Create supplier price defining unit price and not gross unit
             # price (support of modules doesn't depend of this)
             supplier_price, = ProductSupplierPrice.create([{
-                        'product_supplier': product_supplier.id,
+                        'product_supplier': product_supplier1.id,
                         'quantity': 0,
                         'unit_price': Decimal(16),
                         'discount': Decimal('0.20'),
@@ -81,7 +90,7 @@ class PurchaseSupplierDiscountTestCase(ModuleTestCase):
 
             # Create supplier price defining gros_unit price
             supplier_price, = ProductSupplierPrice.create([{
-                        'product_supplier': product_supplier.id,
+                        'product_supplier': product_supplier1.id,
                         'quantity': 0,
                         'gross_unit_price': Decimal(16),
                         'discount': Decimal('0.50'),
@@ -113,31 +122,34 @@ class PurchaseSupplierDiscountTestCase(ModuleTestCase):
         company = create_company()
         with set_company(company):
             create_chart(company)
-            supplier, product_supplier = create_supplier(company)
+            supplier1, _, product, product_supplier1, _ = create_supplier(company)
 
             ProductSupplierPrice.create([{
-                'product_supplier': product_supplier.id,
-                'quantity': 0,
-                'unit_price': Decimal(16),
+                'sequence': 1,
+                'product_supplier': product_supplier1.id,
+                'quantity': 10,
+                'unit_price': Decimal(12),
+                'discount': Decimal('0.20'),
                 }, {
-                'product_supplier': product_supplier.id,
+                'sequence': 2,
+                'product_supplier': product_supplier1.id,
                 'quantity': 5,
                 'unit_price': Decimal(14),
                 'discount': Decimal('0.10'),
                 }, {
-                'product_supplier': product_supplier.id,
-                'quantity': 10,
-                'unit_price': Decimal(12),
-                'discount': Decimal('0.20'),
+                'sequence': 3,
+                'product_supplier': product_supplier1.id,
+                'quantity': 0,
+                'unit_price': Decimal(16),
                 }])
 
             purchase = Purchase()
-            purchase.party = supplier
+            purchase.party = supplier1
             purchase.currency = company.currency
 
             line1 = PurchaseLine()
             line1.purchase = purchase
-            line1.product = product_supplier.id
+            line1.product = product
             line1.quantity = 1
             line1.on_change_product()
             self.assertEqual(line1.unit_price, Decimal(16))
@@ -145,7 +157,7 @@ class PurchaseSupplierDiscountTestCase(ModuleTestCase):
 
             line2 = PurchaseLine()
             line2.purchase = purchase
-            line2.product = product_supplier.id
+            line2.product = product
             line2.quantity = 6
             line2.on_change_product()
             self.assertEqual(line2.unit_price, Decimal(14))
@@ -153,11 +165,12 @@ class PurchaseSupplierDiscountTestCase(ModuleTestCase):
 
             line3 = PurchaseLine()
             line3.purchase = purchase
-            line3.product = product_supplier.id
+            line3.product = product
             line3.quantity = 20
             line3.on_change_product()
             self.assertEqual(line3.unit_price, Decimal(12))
             self.assertEqual(line3.discount, Decimal('0.20'))
+
 
 def suite():
     suite = trytond.tests.test_tryton.suite()
