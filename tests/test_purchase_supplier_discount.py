@@ -122,7 +122,8 @@ class PurchaseSupplierDiscountTestCase(ModuleTestCase):
         company = create_company()
         with set_company(company):
             create_chart(company)
-            supplier1, _, product, product_supplier1, _ = create_supplier(company)
+            supplier1, _, product, product_supplier1, _ = (
+                create_supplier(company))
 
             ProductSupplierPrice.create([{
                 'sequence': 1,
