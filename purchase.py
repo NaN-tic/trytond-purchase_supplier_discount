@@ -8,9 +8,8 @@ from trytond.transaction import Transaction
 __all__ = ['PurchaseLine']
 
 
-class PurchaseLine:
+class PurchaseLine(metaclass=PoolMeta):
     __name__ = 'purchase.line'
-    __metaclass__ = PoolMeta
 
     def get_discount(self):
         pool = Pool()

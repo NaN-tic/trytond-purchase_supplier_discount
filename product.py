@@ -11,9 +11,8 @@ DISCOUNT_DIGITS = int(config.get('digits', 'discount_digits', default=4))
 __all__ = ['ProductSupplierPrice']
 
 
-class ProductSupplierPrice:
+class ProductSupplierPrice(metaclass=PoolMeta):
     __name__ = 'purchase.product_supplier.price'
-    __metaclass__ = PoolMeta
     gross_unit_price = fields.Numeric('Gross Price', digits=price_digits,
         required=True)
     discount = fields.Numeric('Discount', digits=(16, DISCOUNT_DIGITS))
