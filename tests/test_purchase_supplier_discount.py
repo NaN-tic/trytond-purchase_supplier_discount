@@ -14,14 +14,32 @@ from trytond.modules.account.tests import create_chart
 def create_supplier(company):
     pool = Pool()
     Account = pool.get('account.account')
+    Category = pool.get('product.category')
     Template = pool.get('product.template')
     Uom = pool.get('product.uom')
     ProductSupplier = pool.get('purchase.product_supplier')
     Party = pool.get('party.party')
 
+    revenue, = Account.search([
+                ('kind', '=', 'revenue'),
+                ('company', '=', company.id),
+                ])
+    expense, = Account.search([
+                ('kind', '=', 'expense'),
+                ('company', '=', company.id),
+                ])
+
+    account_category, = Category.create([{
+                'name': 'Category',
+                'accounting': True,
+                'account_revenue': revenue.id,
+                'account_expense': expense.id,
+                }])
+
     u, = Uom.search([('name', '=', 'Unit')])
     template, = Template.create([{
                 'name': 'Product',
+                'account_category': account_category.id,
                 'default_uom': u.id,
                 'purchase_uom': u.id,
                 'list_price': Decimal(0),
