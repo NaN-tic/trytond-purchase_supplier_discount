@@ -21,11 +21,11 @@ def create_supplier(company):
     Party = pool.get('party.party')
 
     revenue, = Account.search([
-                ('kind', '=', 'revenue'),
+                ('type.revenue', '=', True),
                 ('company', '=', company.id),
                 ])
     expense, = Account.search([
-                ('kind', '=', 'expense'),
+                ('type.expense', '=', True),
                 ('company', '=', company.id),
                 ])
 
@@ -43,18 +43,19 @@ def create_supplier(company):
                 'default_uom': u.id,
                 'purchase_uom': u.id,
                 'list_price': Decimal(0),
-                'cost_price': Decimal(10),
                 'products': [('create', [{}])],
                 }])
     product, = template.products
+    product.cost_price = Decimal(10)
+    product.save()
 
     # Prepare supplier
     receivable, = Account.search([
-                ('kind', '=', 'receivable'),
+                ('type.receivable', '=', True),
                 ('company', '=', company.id),
                 ])
     payable, = Account.search([
-                ('kind', '=', 'payable'),
+                ('type.payable', '=', True),
                 ('company', '=', company.id),
                 ])
     supplier1, supplier2, = Party.create([{
@@ -69,12 +70,14 @@ def create_supplier(company):
 
     # Prepare product supplier
     product_supplier1, product_supplier2 = ProductSupplier.create([{
-                'product': template.id,
+                'template': template.id,
+                'product': product.id,
                 'company': company.id,
                 'party': supplier1.id,
                 'lead_time': datetime.timedelta(days=2),
                 }, {
-                'product': template.id,
+                'template': template.id,
+                'product': product.id,
                 'company': company.id,
                 'party': supplier2.id,
                 'lead_time': datetime.timedelta(days=2),
