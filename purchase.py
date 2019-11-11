@@ -53,14 +53,14 @@ class PurchaseLine(metaclass=PoolMeta):
         self.unit_price = unit_price
         self.discount = discount
 
-    @fields.depends('product', 'discount')
+    @fields.depends('discount')
     def on_change_quantity(self):
         super(PurchaseLine, self).on_change_quantity()
 
         if self.quantity and self.product:
             self.get_discount()
 
-    @fields.depends('product', 'discount')
+    @fields.depends('quantity', 'discount')
     def on_change_product(self):
         super(PurchaseLine, self).on_change_product()
 
