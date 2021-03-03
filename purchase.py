@@ -30,7 +30,7 @@ class PurchaseLine(metaclass=PoolMeta):
 
         with Transaction().set_context(self._get_context_purchase_price()):
             pattern = ProductSupplier.get_pattern()
-            for product_supplier in self.product.product_suppliers:
+            for product_supplier in self.product.product_suppliers_used():
                 if product_supplier.match(pattern):
                     pattern = ProductSupplierPrice.get_pattern()
                     for price in product_supplier.prices:
