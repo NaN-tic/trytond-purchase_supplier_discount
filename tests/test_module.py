@@ -1,13 +1,13 @@
-# The COPYRIGHT file at the top level of this repository contains the full
-# copyright notices and license terms.
-import unittest
+
+# This file is part of Tryton.  The COPYRIGHT file at the top level of
+# this repository contains the full copyright notices and license terms.
+
 import datetime
 from decimal import Decimal
 
-import trytond.tests.test_tryton
 from trytond.tests.test_tryton import ModuleTestCase, with_transaction
 from trytond.pool import Pool
-from trytond.modules.company.tests import create_company, set_company
+from trytond.modules.company.tests import create_company, set_company, CompanyTestMixin
 from trytond.modules.account.tests import create_chart
 
 
@@ -85,8 +85,8 @@ def create_supplier(company):
     return supplier1, supplier2, product, product_supplier1, product_supplier2
 
 
-class PurchaseSupplierDiscountTestCase(ModuleTestCase):
-    'Test Purchase Supplier Discount module'
+class PurchaseSupplierDiscountTestCase(CompanyTestMixin, ModuleTestCase):
+    'Test PurchaseSupplierDiscount module'
     module = 'purchase_supplier_discount'
 
     @with_transaction()
@@ -194,8 +194,4 @@ class PurchaseSupplierDiscountTestCase(ModuleTestCase):
             self.assertEqual(line3.discount, Decimal('0.20'))
 
 
-def suite():
-    suite = trytond.tests.test_tryton.suite()
-    suite.addTests(unittest.TestLoader().loadTestsFromTestCase(
-        PurchaseSupplierDiscountTestCase))
-    return suite
+del ModuleTestCase
