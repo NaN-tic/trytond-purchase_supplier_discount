@@ -4,6 +4,7 @@ from decimal import Decimal
 from trytond.model import fields
 from trytond.pool import Pool, PoolMeta
 from trytond.transaction import Transaction
+from trytond.modules.product import round_price
 
 __all__ = ['PurchaseLine']
 
@@ -41,12 +42,9 @@ class PurchaseLine(metaclass=PoolMeta):
                             break
                     break
 
-        digits = self.__class__.unit_price.digits[1]
-        unit_price = unit_price.quantize(Decimal(str(10.0 ** -digits)))
+        unit_price = round_price(Decimal(unit_price))
 
-        digits = self.__class__.gross_unit_price.digits[1]
-        gross_unit_price = gross_unit_price_wo_round.quantize(
-            Decimal(str(10.0 ** -digits)))
+        gross_unit_price = round_price(Decimal(gross_unit_price_wo_round))
 
         self.gross_unit_price = gross_unit_price
         self.gross_unit_price_wo_round = gross_unit_price_wo_round
