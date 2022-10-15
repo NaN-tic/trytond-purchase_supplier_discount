@@ -1,11 +1,11 @@
 # The COPYRIGHT file at the top level of this repository contains the full
 # copyright notices and license terms.
 from decimal import Decimal
-
 from trytond.config import config
 from trytond.model import fields
 from trytond.pool import PoolMeta
-from trytond.modules.product import price_digits
+from trytond.modules.product import price_digits, round_price
+
 DISCOUNT_DIGITS = int(config.get('digits', 'discount_digits', default=4))
 
 __all__ = ['ProductSupplierPrice']
@@ -36,15 +36,12 @@ class ProductSupplierPrice(metaclass=PoolMeta):
         unit_price = self.gross_unit_price
         gross_unit_price = self.gross_unit_price
         if self.gross_unit_price is not None and self.discount is not None:
-            unit_price = self.gross_unit_price * (1 - self.discount)
-            digits = self.__class__.unit_price.digits[1]
-            unit_price = unit_price.quantize(Decimal(str(10.0 ** -digits)))
+            unit_price = Decimal(self.gross_unit_price * (1 - self.discount))
+            unit_price = round_price(unit_price)
 
             if self.discount != 1:
-                gross_unit_price = unit_price / (1 - self.discount)
-            digits = self.__class__.gross_unit_price.digits[1]
-            gross_unit_price = gross_unit_price.quantize(
-                Decimal(str(10.0 ** -digits)))
+                gross_unit_price = Decimal(unit_price / (1 - self.discount))
+            gross_unit_price = round_price(gross_unit_price)
         self.gross_unit_price = gross_unit_price
         self.unit_price = unit_price
 
