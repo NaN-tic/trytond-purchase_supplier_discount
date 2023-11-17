@@ -47,7 +47,6 @@ class PurchaseLine(metaclass=PoolMeta):
         gross_unit_price = round_price(Decimal(gross_unit_price_wo_round))
 
         self.gross_unit_price = gross_unit_price
-        self.gross_unit_price_wo_round = gross_unit_price_wo_round
         self.unit_price = unit_price
         self.discount = discount
 
