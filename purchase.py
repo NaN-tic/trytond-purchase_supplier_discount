@@ -25,7 +25,7 @@ class PurchaseLine(metaclass=PoolMeta):
         else:
             uom = self.product.default_uom
 
-        gross_unit_price = gross_unit_price_wo_round = self.gross_unit_price
+        gross_unit_price = self.gross_unit_price
         unit_price = self.gross_unit_price
         discount = Decimal(0)
 
@@ -37,14 +37,15 @@ class PurchaseLine(metaclass=PoolMeta):
                     for price in product_supplier.prices:
                         if price.match(self.quantity, uom, pattern):
                             discount = price.discount or Decimal(0)
-                            gross_unit_price_wo_round = price.gross_unit_price
+                            gross_unit_price = price.gross_unit_price
                             unit_price = price.unit_price
                             break
                     break
 
-        unit_price = round_price(Decimal(unit_price))
-
-        gross_unit_price = round_price(Decimal(gross_unit_price_wo_round))
+        gup_digits = self.__class__.gross_unit_price.digits[1]
+        gross_unit_price = gross_unit_price.quantize(
+            Decimal(str(10.0 ** -gup_digits)))
+        unit_price = round_price(unit_price)
 
         self.gross_unit_price = gross_unit_price
         self.unit_price = unit_price
