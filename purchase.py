@@ -6,8 +6,6 @@ from trytond.pool import Pool, PoolMeta
 from trytond.transaction import Transaction
 from trytond.modules.product import round_price
 
-__all__ = ['PurchaseLine']
-
 
 class PurchaseLine(metaclass=PoolMeta):
     __name__ = 'purchase.line'
@@ -42,10 +40,12 @@ class PurchaseLine(metaclass=PoolMeta):
                             break
                     break
 
-        gup_digits = self.__class__.gross_unit_price.digits[1]
-        gross_unit_price = gross_unit_price.quantize(
-            Decimal(str(10.0 ** -gup_digits)))
-        unit_price = round_price(unit_price)
+        if gross_unit_price is not None:
+            gup_digits = self.__class__.gross_unit_price.digits[1]
+            gross_unit_price = gross_unit_price.quantize(
+                Decimal(str(10.0 ** -gup_digits)))
+        if unit_price is not None:
+            unit_price = round_price(unit_price)
 
         self.gross_unit_price = gross_unit_price
         self.unit_price = unit_price
