@@ -53,7 +53,7 @@ class ProductSupplierPrice(metaclass=PoolMeta):
                 gross_unit_price = vals.get('unit_price', Decimal('0.0'))
                 if 'discount' in vals and vals['discount'] != 1:
                     gross_unit_price = (
-                        gross_unit_price / (1 - vals['discount']))
+                        gross_unit_price / (1 - (vals['discount'] or Decimal('0.0'))))
                 vals['gross_unit_price'] = round_price(gross_unit_price)
             elif not vals.get('unit_price'):
                 unit_price = vals.get('gross_unit_price', Decimal('0.0'))
