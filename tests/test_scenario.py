@@ -3,7 +3,7 @@ import unittest
 from proteus import Model
 from trytond.modules.company.tests.tools import create_company
 from trytond.tests.tools import activate_modules
-from trytond.tests.tools import drop_db
+from trytond.tests.test_tryton import drop_db
 
 
 class Test(unittest.TestCase):
