@@ -4,12 +4,15 @@
 <data>
     <xpath expr="/form/label[@name='unit_price']" position="before">
         <newline/>
-        <label name="gross_unit_price"/>
-        <field name="gross_unit_price"/>
-        <label name="discount"/>
-        <group col="2" id="discount">
-            <field name="discount" factor="100"/>
-            <label name="discount" string="%" xalign="0.0" xexpand="1" xfill="1"/>
+        <label name="base_price"/>
+        <field name="base_price"/>
+        <label id="discount" string="Discount"/>
+        <group col="-1" id="discounts">
+            <group col="-1" id="discount_rate">
+                <field name="discount_rate" factor="100" xexpand="0"/>
+                <label name="discount_rate" string="%" xalign="0.0" xexpand="1"/>
+            </group>
+            <field name="discount_amount"/>
         </group>
     </xpath>
 </data>
