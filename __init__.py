@@ -7,6 +7,7 @@ from . import purchase
 
 def register():
     Pool.register(
+        product.Product,
         product.ProductSupplierPrice,
         purchase.PurchaseLine,
         module='purchase_supplier_discount', type_='model')
