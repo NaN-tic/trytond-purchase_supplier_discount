@@ -12,6 +12,16 @@ from trytond.transaction import Transaction
 class Product(metaclass=PoolMeta):
     __name__ = 'product.product'
 
+    def get_product_supplier(self):
+        ProductSupplier = Pool().get('purchase.product_supplier')
+
+        pattern = ProductSupplier.get_pattern()
+        product_suppliers = self.product_suppliers_used(**pattern)
+        try:
+            return next(product_suppliers)
+        except StopIteration:
+            return None
+
     @classmethod
     def get_base_price(cls, products, quantity=0):
         '''
@@ -27,8 +37,6 @@ class Product(metaclass=PoolMeta):
         Company = pool.get('company.company')
         Currency = pool.get('currency.currency')
         Date = pool.get('ir.date')
-        ProductSupplier = pool.get('purchase.product_supplier')
-        ProductSupplierPrice = pool.get('purchase.product_supplier.price')
 
         context = Transaction().context
         prices = {}
@@ -56,21 +64,13 @@ class Product(metaclass=PoolMeta):
                 product_uom = default_uom
             else:
                 product_uom = uom
-            pattern = ProductSupplier.get_pattern()
-            product_suppliers = product.product_suppliers_used(**pattern)
-            try:
-                product_supplier = next(product_suppliers)
-            except StopIteration:
-                pass
-            else:
-                pattern = ProductSupplierPrice.get_pattern()
-                for price in product_supplier.prices:
-                    if price.match(quantity, product_uom, pattern):
-                        # The following is the only line that differs from the
-                        # get_purchase_price method
-                        unit_price = price.base_price
-                        default_uom = product_supplier.unit
-                        default_currency = product_supplier.currency
+            product_supplier = product.get_product_supplier()
+            if product_supplier:
+                price = product_supplier.get_price(quantity, product_uom)
+                if price:
+                    unit_price = price.base_price
+                    default_uom = product_supplier.unit
+                    default_currency = product_supplier.currency
                 if unit_price is not None:
                     unit_price = Uom.compute_price(
                         default_uom, unit_price, product_uom)
@@ -85,6 +85,19 @@ class Product(metaclass=PoolMeta):
                 unit_price = round_price(unit_price)
             prices[product.id] = unit_price
         return prices
+
+
+class ProductSupplier(metaclass=PoolMeta):
+    __name__ = 'purchase.product_supplier'
+
+    def get_price(self, quantity, product_uom):
+        SupplierPrice = Pool().get('purchase.product_supplier.price')
+
+        pattern = SupplierPrice.get_pattern()
+        for price in self.prices:
+            if price.match(quantity, product_uom, pattern):
+                return price
+        return None
 
 
 class ProductSupplierPrice(metaclass=PoolMeta):
