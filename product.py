@@ -169,19 +169,27 @@ class ProductSupplierPrice(metaclass=PoolMeta):
     def set_discount_amount(cls, lines, name, value):
         pass
 
-    @fields.depends(
-        'product_supplier', '_parent_product_supplier.currency',
+    @fields.depends('product_supplier', 'currency', '_parent_product_supplier.currency',
         methods=[
             'on_change_with_discount_rate', 'on_change_with_discount_amount'])
     def on_change_with_discount(self, name=None):
         pool = Pool()
         Lang = pool.get('ir.lang')
+        Company = pool.get('company.company')
+
         lang = Lang.get()
         rate = self.on_change_with_discount_rate()
         if not rate or rate % Decimal('0.01'):
             amount = self.on_change_with_discount_amount()
-            if amount:
-                return lang.currency(
-                    amount, self.purchase.currency, digits=price_digits[1])
+            if amount is not None:
+                currency = self.currency
+                if not currency:
+                    company = Company(Transaction().context['company'])
+                    currency = company.currency
+                if currency:
+                    return lang.currency(
+                        amount, currency, digits=price_digits[1])
+                else:
+                    return f"{amount}"
         else:
             return lang.format('%i', rate * 100) + '%'
